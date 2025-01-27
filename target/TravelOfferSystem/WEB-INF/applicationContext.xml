@@ -8,19 +8,15 @@
             http://www.springframework.org/schema/context
             http://www.springframework.org/schema/context/spring-context.xsd">
 
-    <!-- Enable annotation scanning for automatic discovery of @Component, @Service, @Repository, @Controller -->
+    <!-- Enable component scanning for controllers and services -->
     <context:component-scan base-package="com.traveloffersystem" />
 
-    <!-- 数据源、JDBC 配置，若需要 XML 配置可在此声明
-         或者你可以在 Java 类 DataSourceConfig 中配置并加 @Bean
-    -->
-
-    <!-- 使用 org.springframework.jdbc.datasource.DriverManagerDataSource (demo by Jianke test)) -->
+    <!-- MySQL 数据源配置 -->
     <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="org.postgresql.Driver" />
-        <property name="url" value="jdbc:postgresql://45.149.207.13:5432/agp?characterEncoding=UTF-8&amp;connectTimeout=30" />
-        <property name="username" value="lin" />
-        <property name="password" value="lin830" />
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://45.149.207.13:3306/agp?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false" />
+        <property name="username" value="root" />
+        <property name="password" value="root" />
     </bean>
 
     <!-- 如果要使用 JdbcTemplate -->

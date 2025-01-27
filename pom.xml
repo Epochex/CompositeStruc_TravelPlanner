@@ -108,6 +108,12 @@
             <version>2.14.2</version>
         </dependency>
 
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.19</version>
+        </dependency>
+
         <!-- JUnit for testing -->
         <dependency>
             <groupId>junit</groupId>
