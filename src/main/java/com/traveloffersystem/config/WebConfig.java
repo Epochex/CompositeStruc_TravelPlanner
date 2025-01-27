@@ -13,7 +13,12 @@ import java.util.List;
 
 @Configuration
 @EnableWebMvc
-@ComponentScan(basePackages = "com.traveloffersystem")
+@ComponentScan(basePackages = {
+        "com.traveloffersystem.business",
+        "com.traveloffersystem.config",
+        "com.traveloffersystem.controller",
+        "com.traveloffersystem.persistence"
+})
 public class WebConfig implements WebMvcConfigurer {
 
     /** 配置 JSP 视图解析器 */
@@ -31,6 +36,6 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         converters.add(new MappingJackson2HttpMessageConverter());
-        // 也可按需继续加其它 converter (xml等)
+        // 可按需添加更多的消息转换器
     }
 }

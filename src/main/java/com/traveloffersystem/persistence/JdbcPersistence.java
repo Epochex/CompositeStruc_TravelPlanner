@@ -2,6 +2,7 @@ package com.traveloffersystem.persistence;
 
 import com.traveloffersystem.business.*;
 import com.traveloffersystem.dao.CombinedDAO;
+import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * JDBC 持久化层实现
  */
+@Repository
 public class JdbcPersistence implements CombinedDAO {
 
     // Ile 表操作
