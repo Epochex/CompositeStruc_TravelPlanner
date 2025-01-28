@@ -8,7 +8,6 @@ public class DefaultController {
 
     @RequestMapping("/")
     public String index() {
-        // 返回 /WEB-INF/views/index.jsp
-        return "index";
+        return "index"; // /WEB-INF/views/index.jsp
     }
 }

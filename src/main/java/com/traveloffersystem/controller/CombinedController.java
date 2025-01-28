@@ -4,9 +4,7 @@ import com.traveloffersystem.business.*;
 import com.traveloffersystem.dao.CombinedDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Qualifier;
 
-import javax.annotation.Resource;
 import java.util.List;
 
 @RestController
@@ -14,7 +12,7 @@ import java.util.List;
 public class CombinedController {
 
     @Autowired
-    private CombinedDAO combinedDAO;
+    private CombinedDAO combinedDAO;  // 通过 @Autowired 注入，@Primary 生效
 
     @PostMapping("/ile")
     public void createIle(@RequestBody Ile ile) throws Exception {

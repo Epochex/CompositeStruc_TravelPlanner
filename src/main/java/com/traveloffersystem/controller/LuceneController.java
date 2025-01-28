@@ -9,8 +9,7 @@ import org.springframework.web.bind.annotation.*;
 public class LuceneController {
 
     @Autowired
-    private CombinedDAO combinedDAO;
-    // 自动注入带 @Primary 的 AdvancedPersistence
+    private CombinedDAO combinedDAO; // 通过 @Autowired 注入 advancedPersistence
 
     @GetMapping("/rebuild")
     @ResponseBody
@@ -35,10 +34,6 @@ public class LuceneController {
         }
     }
 
-    /**
-     * 搜索 Lucene 文档
-     * 例如：GET /lucene/search?query=Hello
-     */
     @GetMapping("/search")
     @ResponseBody
     public String searchDocuments(@RequestParam("query") String queryText) {
@@ -49,10 +44,6 @@ public class LuceneController {
         }
     }
 
-    /**
-     * 执行混合查询
-     * 例如：GET /lucene/mixed?query=select * from Hotel where HOT_etoiles>=3 with beach AND spa
-     */
     @GetMapping("/mixed")
     @ResponseBody
     public String doMixedQuery(@RequestParam("query") String mixedQuery) {

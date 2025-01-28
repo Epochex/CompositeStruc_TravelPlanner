@@ -10,73 +10,79 @@ import java.util.List;
 public interface CombinedDAO {
 
     // =========================
-    // 原有关系型数据库 CRUD 方法
+    // 1. 关系型数据库 CRUD 方法
     // =========================
 
-    // Ile
-    void createIle(Ile ile) throws Exception;
-    Ile findIleById(int id) throws Exception;
-    List<Ile> findAllIles() throws Exception;
+    // Ile 表
+    void createIle(Ile ile) throws Exception;                // 创建岛屿
+    Ile findIleById(int id) throws Exception;               // 根据ID查找岛屿
+    List<Ile> findAllIles() throws Exception;               // 查找所有岛屿
 
-    // Plage
-    void createPlage(Plage plage) throws Exception;
-    Plage findPlageById(int id) throws Exception;
-    List<Plage> findAllPlages() throws Exception;
+    // Plage 表
+    void createPlage(Plage plage) throws Exception;         // 创建沙滩
+    Plage findPlageById(int id) throws Exception;           // 根据ID查找沙滩
+    List<Plage> findAllPlages() throws Exception;           // 查找所有沙滩
 
-    // Transport
-    void createTransport(Transport transport) throws Exception;
-    Transport findTransportById(int id) throws Exception;
-    List<Transport> findAllTransports() throws Exception;
+    // Transport 表
+    void createTransport(Transport transport) throws Exception; // 创建运输工具
+    Transport findTransportById(int id) throws Exception;       // 根据ID查找运输工具
+    List<Transport> findAllTransports() throws Exception;       // 查找所有运输工具
 
-    // Lieu
-    void createLieu(Lieu lieu) throws Exception;
-    Lieu findLieuById(int id) throws Exception;
-    List<Lieu> findAllLieux() throws Exception;
+    // Lieu 表
+    void createLieu(Lieu lieu) throws Exception;            // 创建地点
+    Lieu findLieuById(int id) throws Exception;             // 根据ID查找地点
+    List<Lieu> findAllLieux() throws Exception;             // 查找所有地点
 
-    // Hotel
-    void createHotel(Hotel hotel) throws Exception;
-    Hotel findHotelById(int id) throws Exception;
-    List<Hotel> findAllHotels() throws Exception;
+    // Hotel 表
+    void createHotel(Hotel hotel) throws Exception;         // 创建酒店
+    Hotel findHotelById(int id) throws Exception;           // 根据ID查找酒店
+    List<Hotel> findAllHotels() throws Exception;           // 查找所有酒店
 
-    // SiteTouristique
-    void createSiteTouristique(SiteTouristique siteTouristique) throws Exception;
-    SiteTouristique findSiteTouristiqueById(int id) throws Exception;
-    List<SiteTouristique> findAllSiteTouristiques() throws Exception;
+    // SiteTouristique 表
+    void createSiteTouristique(SiteTouristique siteTouristique) throws Exception; // 创建旅游景点
+    SiteTouristique findSiteTouristiqueById(int id) throws Exception;            // 根据ID查找旅游景点
+    List<SiteTouristique> findAllSiteTouristiques() throws Exception;            // 查找所有旅游景点
 
-    // Arret
-    void createArret(Arret arret) throws Exception;
-    Arret findArretById(int id) throws Exception;
-    List<Arret> findAllArrets() throws Exception;
-
+    // Arret 表
+    void createArret(Arret arret) throws Exception;         // 创建站点
+    Arret findArretById(int id) throws Exception;           // 根据ID查找站点
+    List<Arret> findAllArrets() throws Exception;           // 查找所有站点
 
     // =========================
-    // 下面是新增加的“Lucene + 混合查询”方法
+    // 2. Lucene 相关方法
     // =========================
 
     /**
-     * 重建（或初始化）Lucene 索引
-     * 可根据需要扫描某个目录下的文本文件，也可直接在代码里自定义
+     * 重建（或初始化）Lucene 索引。
+     * - 可通过文件扫描或数据库数据导入方式完成索引重建。
      */
     void rebuildLuceneIndex() throws Exception;
 
     /**
-     * 往 Lucene 索引里添加一个文档
-     * @param id      文档ID（可与数据库某条记录主键对应）
-     * @param content 文档内容（要被全文检索的文本）
+     * 往 Lucene 索引中添加或更新文档。
+     * @param id 文档ID（与数据库记录主键对应）
+     * @param content 文档内容（需被检索的文本内容）
      */
     void addLuceneDocument(int id, String content) throws Exception;
 
     /**
-     * 在 Lucene 索引里进行搜索
-     * @param queryText 查询关键词/表达式
-     * @return 返回字符串或更复杂的对象都可以
+     * 在 Lucene 索引中执行全文搜索。
+     * @param queryText 查询关键词或表达式
+     * @return 返回符合条件的文档信息
      */
     String searchLucene(String queryText) throws Exception;
 
     /**
-     * 执行 “混合查询”（SQL + Lucene）
-     * 示例：select * from Hotel where HOT_etoiles>=3 with beach AND spa
-     * 你可以根据需要返回一个字符串、或一个自定义类列表
+     * 执行混合查询（SQL 查询结合 Lucene 检索）。
+     * - 示例：`select * from Hotel where HOT_etoiles>=3 with beach AND spa`
+     * - 解析 SQL 和 Lucene 查询部分，分别执行后合并结果。
+     * @param mixedQuery 混合查询字符串
+     * @return 返回查询结果（可以是字符串，也可以是自定义类列表）
      */
     String executeMixedQuery(String mixedQuery) throws Exception;
+
+    // =========================
+    // 3. 其他可能扩展的功能（可选）
+    // =========================
+    // 根据业务需求扩展其他高级功能
 }
