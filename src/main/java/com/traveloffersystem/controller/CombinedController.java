@@ -1,8 +1,10 @@
 package com.traveloffersystem.controller;
 
 import com.traveloffersystem.business.*;
-import com.traveloffersystem.persistence.JdbcPersistence;
+import com.traveloffersystem.dao.CombinedDAO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -11,118 +13,117 @@ import java.util.List;
 @RequestMapping("/api")
 public class CombinedController {
 
-    @Resource
-    private JdbcPersistence jdbcPersistence;
+    @Autowired
+    private CombinedDAO combinedDAO;
 
-    // Ile 表操作
     @PostMapping("/ile")
     public void createIle(@RequestBody Ile ile) throws Exception {
-        jdbcPersistence.createIle(ile);
+        combinedDAO.createIle(ile);
     }
 
     @GetMapping("/ile/{id}")
     public Ile findIleById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findIleById(id);
+        return combinedDAO.findIleById(id);
     }
 
     @GetMapping("/ile")
     public List<Ile> findAllIles() throws Exception {
-        return jdbcPersistence.findAllIles();
+        return combinedDAO.findAllIles();
     }
 
     // Plage 表操作
     @PostMapping("/plage")
     public void createPlage(@RequestBody Plage plage) throws Exception {
-        jdbcPersistence.createPlage(plage);
+        combinedDAO.createPlage(plage);
     }
 
     @GetMapping("/plage/{id}")
     public Plage findPlageById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findPlageById(id);
+        return combinedDAO.findPlageById(id);
     }
 
     @GetMapping("/plage")
     public List<Plage> findAllPlages() throws Exception {
-        return jdbcPersistence.findAllPlages();
+        return combinedDAO.findAllPlages();
     }
 
     // Transport 表操作
     @PostMapping("/transport")
     public void createTransport(@RequestBody Transport transport) throws Exception {
-        jdbcPersistence.createTransport(transport);
+        combinedDAO.createTransport(transport);
     }
 
     @GetMapping("/transport/{id}")
     public Transport findTransportById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findTransportById(id);
+        return combinedDAO.findTransportById(id);
     }
 
     @GetMapping("/transport")
     public List<Transport> findAllTransports() throws Exception {
-        return jdbcPersistence.findAllTransports();
+        return combinedDAO.findAllTransports();
     }
 
     // Lieu 表操作
     @PostMapping("/lieu")
     public void createLieu(@RequestBody Lieu lieu) throws Exception {
-        jdbcPersistence.createLieu(lieu);
+        combinedDAO.createLieu(lieu);
     }
 
     @GetMapping("/lieu/{id}")
     public Lieu findLieuById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findLieuById(id);
+        return combinedDAO.findLieuById(id);
     }
 
     @GetMapping("/lieu")
     public List<Lieu> findAllLieux() throws Exception {
-        return jdbcPersistence.findAllLieux();
+        return combinedDAO.findAllLieux();
     }
 
     // Hotel 表操作
     @PostMapping("/hotel")
     public void createHotel(@RequestBody Hotel hotel) throws Exception {
-        jdbcPersistence.createHotel(hotel);
+        combinedDAO.createHotel(hotel);
     }
 
     @GetMapping("/hotel/{id}")
     public Hotel findHotelById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findHotelById(id);
+        return combinedDAO.findHotelById(id);
     }
 
     @GetMapping("/hotel")
     public List<Hotel> findAllHotels() throws Exception {
-        return jdbcPersistence.findAllHotels();
+        return combinedDAO.findAllHotels();
     }
 
     // SiteTouristique 表操作
     @PostMapping("/site")
     public void createSiteTouristique(@RequestBody SiteTouristique siteTouristique) throws Exception {
-        jdbcPersistence.createSiteTouristique(siteTouristique);
+        combinedDAO.createSiteTouristique(siteTouristique);
     }
 
     @GetMapping("/site/{id}")
     public SiteTouristique findSiteTouristiqueById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findSiteTouristiqueById(id);
+        return combinedDAO.findSiteTouristiqueById(id);
     }
 
     @GetMapping("/site")
     public List<SiteTouristique> findAllSiteTouristiques() throws Exception {
-        return jdbcPersistence.findAllSiteTouristiques();
+        return combinedDAO.findAllSiteTouristiques();
     }
 
     // Arret 表操作
     @PostMapping("/arret")
     public void createArret(@RequestBody Arret arret) throws Exception {
-        jdbcPersistence.createArret(arret);
+        combinedDAO.createArret(arret);
     }
 
     @GetMapping("/arret/{id}")
     public Arret findArretById(@PathVariable int id) throws Exception {
-        return jdbcPersistence.findArretById(id);
+        return combinedDAO.findArretById(id);
     }
 
     @GetMapping("/arret")
     public List<Arret> findAllArrets() throws Exception {
-        return jdbcPersistence.findAllArrets();
+        return combinedDAO.findAllArrets();
     }
 }

@@ -94,12 +94,33 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- HikariCP JDBC Connection Pool -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>3.4.5</version> <!-- 版本号可以根据需要调整 -->
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.11</version>
+        </dependency>
+
         <!-- JSTL -->
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>jstl</artifactId>
             <version>1.2</version>
         </dependency>
+
+        <dependency>
+            <groupId>javax.inject</groupId>
+            <artifactId>javax.inject</artifactId>
+            <version>1</version> <!-- Java 8 兼容的版本 -->
+        </dependency>
+
+
 
         <!-- Jackson (JSON 序列化) -->
         <dependency>

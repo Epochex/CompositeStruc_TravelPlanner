@@ -1,60 +1,65 @@
 package com.traveloffersystem.controller;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.*;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
-import org.apache.lucene.store.FSDirectory;
-import org.springframework.stereotype.Controller;
+import com.traveloffersystem.dao.CombinedDAO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.nio.file.Paths;
-
-@Controller
+@RestController
 @RequestMapping("/lucene")
 public class LuceneController {
 
-    private static final String LUCENE_INDEX_PATH = "C:/temp/luceneIndex";
+    @Autowired
+    private CombinedDAO combinedDAO;
+    // 自动注入带 @Primary 的 AdvancedPersistence
+
+    @GetMapping("/rebuild")
+    @ResponseBody
+    public String rebuildIndex() {
+        try {
+            combinedDAO.rebuildLuceneIndex();
+            return "Lucene index rebuilt successfully.";
+        } catch (Exception e) {
+            return "Error rebuilding index: " + e.getMessage();
+        }
+    }
 
     @PostMapping("/add")
     @ResponseBody
-    public String addDocument(@RequestParam("id") int id, @RequestParam("content") String content) {
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-
-            Document doc = new Document();
-            doc.add(new IntPoint("id", id));
-            doc.add(new TextField("content", content, Field.Store.YES));
-            writer.addDocument(doc);
+    public String addDocument(@RequestParam("id") int id,
+                              @RequestParam("content") String content) {
+        try {
+            combinedDAO.addLuceneDocument(id, content);
             return "Document added successfully.";
-        } catch (IOException e) {
+        } catch (Exception e) {
             return "Error adding document: " + e.getMessage();
         }
     }
 
+    /**
+     * 搜索 Lucene 文档
+     * 例如：GET /lucene/search?query=Hello
+     */
     @GetMapping("/search")
     @ResponseBody
     public String searchDocuments(@RequestParam("query") String queryText) {
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             DirectoryReader reader = DirectoryReader.open(dir)) {
-
-            IndexSearcher searcher = new IndexSearcher(reader);
-            QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-            Query query = parser.parse(queryText);
-
-            TopDocs results = searcher.search(query, 10);
-            StringBuilder response = new StringBuilder("Search results:\n");
-            for (ScoreDoc scoreDoc : results.scoreDocs) {
-                Document doc = searcher.doc(scoreDoc.doc);
-                response.append("ID: ").append(doc.get("id"))
-                        .append(", Content: ").append(doc.get("content"))
-                        .append("\n");
-            }
-            return response.toString();
+        try {
+            return combinedDAO.searchLucene(queryText);
         } catch (Exception e) {
             return "Error searching documents: " + e.getMessage();
+        }
+    }
+
+    /**
+     * 执行混合查询
+     * 例如：GET /lucene/mixed?query=select * from Hotel where HOT_etoiles>=3 with beach AND spa
+     */
+    @GetMapping("/mixed")
+    @ResponseBody
+    public String doMixedQuery(@RequestParam("query") String mixedQuery) {
+        try {
+            return combinedDAO.executeMixedQuery(mixedQuery);
+        } catch (Exception e) {
+            return "Error executing mixed query: " + e.getMessage();
         }
     }
 }

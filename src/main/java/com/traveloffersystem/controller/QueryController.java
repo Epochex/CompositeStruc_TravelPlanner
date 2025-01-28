@@ -1,9 +1,9 @@
 package com.traveloffersystem.controller;
 
-import com.traveloffersystem.business.*;
-import com.traveloffersystem.persistence.JdbcPersistence;
+import com.traveloffersystem.business.Ile;
+import com.traveloffersystem.dao.CombinedDAO;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import java.util.List;
 
@@ -12,31 +12,17 @@ import java.util.List;
 public class QueryController {
 
     @Resource
-    private JdbcPersistence jdbcPersistence;
+    @Qualifier("advancedPersistence") // 明确使用 advancedPersistence
+    private CombinedDAO combinedDAO;
 
-    // 测试获取所有岛屿
     @GetMapping("/ile")
     public List<Ile> getAllIles() throws Exception {
-        return jdbcPersistence.findAllIles();
+        return combinedDAO.findAllIles();
     }
 
-    // 测试插入岛屿
     @PostMapping("/ile")
     public String addIle(@RequestBody Ile ile) throws Exception {
-        jdbcPersistence.createIle(ile);
+        combinedDAO.createIle(ile);
         return "Ile added successfully!";
-    }
-
-    // 测试获取所有沙滩
-    @GetMapping("/plage")
-    public List<Plage> getAllPlages() throws Exception {
-        return jdbcPersistence.findAllPlages();
-    }
-
-    // 测试插入沙滩
-    @PostMapping("/plage")
-    public String addPlage(@RequestBody Plage plage) throws Exception {
-        jdbcPersistence.createPlage(plage);
-        return "Plage added successfully!";
     }
 }
