@@ -14,20 +14,20 @@ import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.*;
-
+import java.nio.file.Paths;
 /**
  * AdvancedPersistence 实现 CombinedDAO 接口
  * 仅实现与 SiteTouristique 和 Lieu 表相关的数据库操作，以及 Lucene 的文本操作
  */
 public class AdvancedPersistence implements CombinedDAO {
 
-    // Lucene 文本文件目录
-    private static final String TEXT_FOLDER_PATH =
-            "C:/Users/crayo/Desktop/CY Master I/AGP/dev_version/TravelOfferSystem/lucene_texts";
+    private static final String PROJECT_ROOT = System.getProperty("user.dir");
 
-    // Lucene 索引目录
-    private static final String LUCENE_INDEX_PATH =
-            "C:/Users/crayo/Desktop/CY Master I/AGP/dev_version/TravelOfferSystem/lucene_data";
+    // Lucene Text file directory
+    private static final String TEXT_FOLDER_PATH = Paths.get(PROJECT_ROOT, "lucene_texts").toString();
+
+    // Lucene indexed catalog
+    private static final String LUCENE_INDEX_PATH = Paths.get(PROJECT_ROOT, "lucene_data").toString();
 
     // =============================
     // 1) 关系型数据库相关实现
