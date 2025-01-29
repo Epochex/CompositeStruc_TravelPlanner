@@ -1,314 +1,53 @@
-//package com.traveloffersystem.persistence;
-//
-//import com.traveloffersystem.dao.CombinedDAO;
-//import org.springframework.context.annotation.Primary;
-//import org.springframework.stereotype.Repository;
-//
-//import com.traveloffersystem.business.*;
-//import org.apache.lucene.analysis.standard.StandardAnalyzer;
-//import org.apache.lucene.document.*;
-//import org.apache.lucene.index.*;
-//import org.apache.lucene.queryparser.classic.QueryParser;
-//import org.apache.lucene.search.*;
-//import org.apache.lucene.store.FSDirectory;
-//
-//import java.io.IOException;
-//import java.nio.file.Paths;
-//import java.sql.*;
-//import java.util.*;
-
-// * 实现 CombinedDAO，既包含对数据库的 CRUD (复用 JdbcPersistence)，也包含 Lucene/混合查询逻辑。
-// */
-//@Repository("advancedPersistence")
-//@Primary
-//public class AdvancedPersistence implements CombinedDAO {
-//
-//    private final JdbcPersistence _jdbcDao = new JdbcPersistence();
-//
-//    // Lucene 索引存储位置
-//    private static final String LUCENE_INDEX_PATH =
-//            System.getProperty("user.dir") + "/TravelOfferSystem/lucene_data";
-//
-//    // ===================
-//    // 1. 数据库 CRUD (委托给 _jdbcDao)
-//    // ===================
-//    @Override
-//    public void createIle(Ile ile) throws Exception {
-//        _jdbcDao.createIle(ile);
-//    }
-//
-//    @Override
-//    public Ile findIleById(int id) throws Exception {
-//        return _jdbcDao.findIleById(id);
-//    }
-//
-//    @Override
-//    public List<Ile> findAllIles() throws Exception {
-//        return _jdbcDao.findAllIles();
-//    }
-//
-//    @Override
-//    public void createPlage(Plage plage) throws Exception {
-//        _jdbcDao.createPlage(plage);
-//    }
-//
-//    @Override
-//    public Plage findPlageById(int id) throws Exception {
-//        return _jdbcDao.findPlageById(id);
-//    }
-//
-//    @Override
-//    public List<Plage> findAllPlages() throws Exception {
-//        return _jdbcDao.findAllPlages();
-//    }
-//
-//    @Override
-//    public void createTransport(Transport transport) throws Exception {
-//        _jdbcDao.createTransport(transport);
-//    }
-//
-//    @Override
-//    public Transport findTransportById(int id) throws Exception {
-//        return _jdbcDao.findTransportById(id);
-//    }
-//
-//    @Override
-//    public List<Transport> findAllTransports() throws Exception {
-//        return _jdbcDao.findAllTransports();
-//    }
-//
-//    @Override
-//    public void createLieu(Lieu lieu) throws Exception {
-//        _jdbcDao.createLieu(lieu);
-//    }
-//
-//    @Override
-//    public Lieu findLieuById(int id) throws Exception {
-//        return _jdbcDao.findLieuById(id);
-//    }
-//
-//    @Override
-//    public List<Lieu> findAllLieux() throws Exception {
-//        return _jdbcDao.findAllLieux();
-//    }
-//
-//    @Override
-//    public void createHotel(Hotel hotel) throws Exception {
-//        _jdbcDao.createHotel(hotel);
-//    }
-//
-//    @Override
-//    public Hotel findHotelById(int id) throws Exception {
-//        return _jdbcDao.findHotelById(id);
-//    }
-//
-//    @Override
-//    public List<Hotel> findAllHotels() throws Exception {
-//        return _jdbcDao.findAllHotels();
-//    }
-//
-//    @Override
-//    public void createSiteTouristique(SiteTouristique siteTouristique) throws Exception {
-//        _jdbcDao.createSiteTouristique(siteTouristique);
-//    }
-//
-//    @Override
-//    public SiteTouristique findSiteTouristiqueById(int id) throws Exception {
-//        return _jdbcDao.findSiteTouristiqueById(id);
-//    }
-//
-//    @Override
-//    public List<SiteTouristique> findAllSiteTouristiques() throws Exception {
-//        return _jdbcDao.findAllSiteTouristiques();
-//    }
-//
-//    @Override
-//    public void createArret(Arret arret) throws Exception {
-//        _jdbcDao.createArret(arret);
-//    }
-//
-//    @Override
-//    public Arret findArretById(int id) throws Exception {
-//        return _jdbcDao.findArretById(id);
-//    }
-//
-//    @Override
-//    public List<Arret> findAllArrets() throws Exception {
-//        return _jdbcDao.findAllArrets();
-//    }
-//
-//    // ===================
-//    // 2. Lucene 相关方法
-//    // ===================
-//    @Override
-//    public void rebuildLuceneIndex() throws Exception {
-//        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-//             IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-//            writer.deleteAll();
-//            writer.commit();
-//        }
-//    }
-//
-//    @Override
-//    public void addLuceneDocument(int id, String content) throws Exception {
-//        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-//             IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-//
-//            Query q = IntPoint.newExactQuery("id", id);
-//            writer.deleteDocuments(q);
-//
-//            Document doc = new Document();
-//            doc.add(new IntPoint("id", id));
-//            doc.add(new StoredField("id", id));
-//            doc.add(new TextField("content", content, Field.Store.YES));
-//            writer.addDocument(doc);
-//        }
-//    }
-//
-//    @Override
-//    public String searchLucene(String queryText) throws Exception {
-//        StringBuilder sb = new StringBuilder("Search results:\n");
-//        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-//             DirectoryReader reader = DirectoryReader.open(dir)) {
-//
-//            IndexSearcher searcher = new IndexSearcher(reader);
-//            QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-//            Query query = parser.parse(queryText);
-//
-//            TopDocs topDocs = searcher.search(query, 10);
-//            for (ScoreDoc sd : topDocs.scoreDocs) {
-//                Document doc = searcher.doc(sd.doc);
-//                sb.append("ID=").append(doc.get("id"))
-//                        .append(", content=").append(doc.get("content"))
-//                        .append(", score=").append(sd.score).append("\n");
-//            }
-//        }
-//        return sb.toString();
-//    }
-//
-//    @Override
-//    public String executeMixedQuery(String mixedQuery) throws Exception {
-//        String lower = mixedQuery.toLowerCase();
-//        int withPos = lower.indexOf(" with ");
-//        if (withPos < 0) {
-//            return "Mixed query error: No 'with' found.";
-//        }
-//        String sqlPart = mixedQuery.substring(0, withPos).trim();
-//        String lucenePart = mixedQuery.substring(withPos + 6).trim();
-//
-//        // 1) SQL 查询
-//        Map<Integer, String> sqlResults = new LinkedHashMap<>();
-//        try (Connection conn = JdbcConnection.getConnection();
-//             Statement stmt = conn.createStatement();
-//             ResultSet rs = stmt.executeQuery(sqlPart)) {
-//
-//            ResultSetMetaData meta = rs.getMetaData();
-//            int colCount = meta.getColumnCount();
-//            while (rs.next()) {
-//                int pk = rs.getInt(1); // 假设第一列是主键
-//                StringBuilder rowData = new StringBuilder();
-//                for (int i = 1; i <= colCount; i++) {
-//                    rowData.append(meta.getColumnName(i)).append("=")
-//                            .append(rs.getString(i)).append("; ");
-//                }
-//                sqlResults.put(pk, rowData.toString());
-//            }
-//        }
-//
-//        // 2) Lucene 查询
-//        Map<Integer, Float> luceneMap = new LinkedHashMap<>();
-//        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-//             DirectoryReader reader = DirectoryReader.open(dir)) {
-//
-//            IndexSearcher searcher = new IndexSearcher(reader);
-//            QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-//            Query query = parser.parse(lucenePart);
-//
-//            TopDocs topDocs = searcher.search(query, 100);
-//            for (ScoreDoc sd : topDocs.scoreDocs) {
-//                Document doc = searcher.doc(sd.doc);
-//                int docIdVal = Integer.parseInt(doc.get("id"));
-//                luceneMap.put(docIdVal, sd.score);
-//            }
-//        }
-//
-//        // 3) Join
-//        List<Map.Entry<Integer, Float>> sorted = new ArrayList<>(luceneMap.entrySet());
-//        sorted.sort((a, b) -> Float.compare(b.getValue(), a.getValue()));
-//
-//        StringBuilder sb = new StringBuilder("MixedQuery Results:\n");
-//        for (Map.Entry<Integer, Float> entry : sorted) {
-//            int pk = entry.getKey();
-//            if (sqlResults.containsKey(pk)) {
-//                sb.append("PK=").append(pk)
-//                        .append(", score=").append(entry.getValue())
-//                        .append(", SQLData=").append(sqlResults.get(pk))
-//                        .append("\n");
-//            }
-//        }
-//        return sb.toString();
-//    }
-//}
 package com.traveloffersystem.persistence;
 
-import com.traveloffersystem.dao.CombinedDAO;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Repository;
-
 import com.traveloffersystem.business.*;
+import com.traveloffersystem.dao.CombinedDAO;
+import com.traveloffersystem.utils.FileTextUtils;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.*;
 import org.apache.lucene.store.FSDirectory;
+import org.springframework.stereotype.Repository;
 
-import java.io.IOException;
+import java.io.File;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.*;
 
-/**
- * 实现 CombinedDAO，既包含对数据库的 CRUD (复用 JdbcPersistence)，也包含 Lucene/混合查询逻辑。
- */
 @Repository("advancedPersistence")
-@Primary
 public class AdvancedPersistence implements CombinedDAO {
 
-    // 复用已有的 JdbcPersistence
-    private final JdbcPersistence _jdbcDao = new JdbcPersistence();
+    // Lucene文本文件存储目录
+    private static final String TEXT_FOLDER_PATH =
+            "C:/Users/crayo/Desktop/CY Master I/AGP/dev_version/TravelOfferSystem/lucene_texts";
 
+    // Lucene索引目录
     private static final String LUCENE_INDEX_PATH =
-            System.getProperty("user.dir") + "/TravelOfferSystem/lucene_data";
+            "C:/Users/crayo/Desktop/CY Master I/AGP/dev_version/TravelOfferSystem/lucene_data";
 
-    // ====== 数据库 CRUD，全委托给_jdbcDao ======
+    // =============================
+    //  1) 普通表操作(不实现或空)
+    // =============================
     @Override
-    public void createIle(Ile ile) throws Exception {
-        _jdbcDao.createIle(ile);
-    }
-
-    @Override
-    public Ile findIleById(int id) throws Exception {
-        return _jdbcDao.findIleById(id);
-    }
+    public void createIle(Ile ile) throws Exception { /* 不实现或空 */ }
 
     @Override
-    public List<Ile> findAllIles() throws Exception {
-        return _jdbcDao.findAllIles();
-    }
+    public Ile findIleById(int id) throws Exception { return null; }
 
     @Override
-    public void createPlage(Plage plage) throws Exception {
-
-    }
+    public List<Ile> findAllIles() throws Exception { return Collections.emptyList(); }
 
     @Override
-    public Plage findPlageById(int id) throws Exception {
-        return null;
-    }
+    public void createPlage(Plage plage) throws Exception { /* ... */ }
+
+    @Override
+    public Plage findPlageById(int id) throws Exception { return null; }
 
     @Override
     public List<Plage> findAllPlages() throws Exception {
+        // 返回空或 throw new UnsupportedOperationException
         return Collections.emptyList();
     }
 
@@ -387,14 +126,42 @@ public class AdvancedPersistence implements CombinedDAO {
         return Collections.emptyList();
     }
 
-    // (其他同理，省略...)
+    // ...(其余表均同理)...
 
-    // ====== Lucene 相关方法 ======
+    // =============================
+    // 2) Lucene相关实现
+    // =============================
+    @Override
+    public void addTextFileToRow(int id, String content) throws Exception {
+        // 1) 写文件
+        String filePath = TEXT_FOLDER_PATH + File.separator + id + ".txt";
+        FileTextUtils.writeTextFile(filePath, content);
+        // 2) 可立即addLuceneDocument
+        addLuceneDocument(id, content);
+    }
+
     @Override
     public void rebuildLuceneIndex() throws Exception {
         try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
              IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-            writer.deleteAll();
+
+            writer.deleteAll(); // 清空索引
+
+            File folder = new File(TEXT_FOLDER_PATH);
+            File[] files = folder.listFiles((dir1, name) -> name.endsWith(".txt"));
+            if (files != null) {
+                for (File f : files) {
+                    String filename = f.getName();
+                    int key = Integer.parseInt(filename.replace(".txt", ""));
+                    String txt = FileTextUtils.readTextFile(f.getAbsolutePath());
+
+                    Document doc = new Document();
+                    doc.add(new IntPoint("id", key));
+                    doc.add(new StoredField("id", key));
+                    doc.add(new TextField("content", txt, Field.Store.YES));
+                    writer.addDocument(doc);
+                }
+            }
             writer.commit();
         }
     }
@@ -404,23 +171,24 @@ public class AdvancedPersistence implements CombinedDAO {
         try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
              IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
 
+            // 先删除旧文档
             Query q = IntPoint.newExactQuery("id", id);
             writer.deleteDocuments(q);
 
+            // 添加新文档
             Document doc = new Document();
             doc.add(new IntPoint("id", id));
             doc.add(new StoredField("id", id));
             doc.add(new TextField("content", content, Field.Store.YES));
-
             writer.addDocument(doc);
+
+            writer.commit();
         }
     }
 
     @Override
     public String searchLucene(String queryText) throws Exception {
         StringBuilder sb = new StringBuilder();
-        sb.append("Search results:\n");
-
         try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
              DirectoryReader reader = DirectoryReader.open(dir)) {
 
@@ -428,7 +196,7 @@ public class AdvancedPersistence implements CombinedDAO {
             QueryParser parser = new QueryParser("content", new StandardAnalyzer());
             Query query = parser.parse(queryText);
 
-            TopDocs topDocs = searcher.search(query, 10);
+            TopDocs topDocs = searcher.search(query, 20);
             for (ScoreDoc sd : topDocs.scoreDocs) {
                 Document doc = searcher.doc(sd.doc);
                 sb.append("ID=").append(doc.get("id"))
@@ -436,45 +204,51 @@ public class AdvancedPersistence implements CombinedDAO {
                         .append(", score=").append(sd.score)
                         .append("\n");
             }
-        } catch (IOException e) {
-            throw new Exception("IOException in searchLucene: " + e.getMessage(), e);
         }
         return sb.toString();
     }
 
     @Override
     public String executeMixedQuery(String mixedQuery) throws Exception {
+        // 1) 判断是否包含 " with "
         String lower = mixedQuery.toLowerCase();
-        int withPos = lower.indexOf(" with ");
-        if (withPos < 0) {
-            return "Mixed query error: No 'with' found. Please use '... with ...' syntax.";
+        int idx = lower.indexOf(" with ");
+        if (idx < 0) {
+            // 不是混合查询，直接执行SQL
+            return "No 'with' found. Just an SQL: " + mixedQuery;
         }
-        String sqlPart = mixedQuery.substring(0, withPos).trim();
-        String lucenePart = mixedQuery.substring(withPos + 6).trim();
 
-        // 1) SQL查询
-        Map<Integer, String> sqlResults = new LinkedHashMap<>();
+        // 2) 拆分
+        String sqlPart = mixedQuery.substring(0, idx).trim();     // "select ... from ... where ..."
+        String lucenePart = mixedQuery.substring(idx + 6).trim(); // Lucene查询
+
+        // 3) 执行SQL
+        //   假设：SQL 结果的第一列是主键 (int)
+        Map<Integer,String> sqlMap = new LinkedHashMap<>();
         try (Connection conn = JdbcConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sqlPart)) {
+             Statement st = conn.createStatement();
+             ResultSet rs = st.executeQuery(sqlPart)) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int colCount = meta.getColumnCount();
-            while (rs.next()) {
+            ResultSetMetaData md = rs.getMetaData();
+            int colCount = md.getColumnCount();
+
+            while(rs.next()) {
+                // 主键
                 int pk = rs.getInt(1);
-                StringBuilder rowData = new StringBuilder();
-                for (int i = 1; i <= colCount; i++) {
-                    rowData.append(meta.getColumnName(i))
+                // 拼装整行字符串
+                StringBuilder row = new StringBuilder();
+                for(int i=1;i<=colCount;i++){
+                    row.append(md.getColumnName(i))
                             .append("=")
                             .append(rs.getString(i))
                             .append("; ");
                 }
-                sqlResults.put(pk, rowData.toString());
+                sqlMap.put(pk, row.toString());
             }
         }
 
-        // 2) Lucene检索
-        Map<Integer, Float> luceneMap = new LinkedHashMap<>();
+        // 4) 执行Lucene搜索
+        Map<Integer, Float> luceneResults = new LinkedHashMap<>();
         try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
              DirectoryReader reader = DirectoryReader.open(dir)) {
 
@@ -483,29 +257,30 @@ public class AdvancedPersistence implements CombinedDAO {
             Query query = parser.parse(lucenePart);
 
             TopDocs topDocs = searcher.search(query, 100);
-            for (ScoreDoc sd : topDocs.scoreDocs) {
+            for (ScoreDoc sd: topDocs.scoreDocs) {
                 Document doc = searcher.doc(sd.doc);
-                int docIdVal = Integer.parseInt(doc.get("id"));
-                luceneMap.put(docIdVal, sd.score);
+                int docId = Integer.parseInt(doc.get("id"));
+                luceneResults.put(docId, sd.score);
             }
         }
 
-        // 3) Join
-        List<Map.Entry<Integer, Float>> sorted = new ArrayList<>(luceneMap.entrySet());
-        sorted.sort((a, b) -> Float.compare(b.getValue(), a.getValue()));
+        // 5) Join
+        //   只保留luceneResults里也在sqlMap中的 pk, 按score降序
+        List<Map.Entry<Integer,Float>> joined = new ArrayList<>(luceneResults.entrySet());
+        joined.sort((a,b)-> Float.compare(b.getValue(), a.getValue()));
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("MixedQuery Results:\n");
-        for (Map.Entry<Integer, Float> entry : sorted) {
-            int pk = entry.getKey();
-            float score = entry.getValue();
-            if (sqlResults.containsKey(pk)) {
+        StringBuilder sb = new StringBuilder("MixedQuery Results:\n");
+        for (Map.Entry<Integer,Float> e: joined) {
+            int pk = e.getKey();
+            float score = e.getValue();
+            if(sqlMap.containsKey(pk)) {
                 sb.append("PK=").append(pk)
                         .append(", score=").append(score)
-                        .append(", SQLData=").append(sqlResults.get(pk))
+                        .append(", SQLData=").append(sqlMap.get(pk))
                         .append("\n");
             }
         }
+
         return sb.toString();
     }
 }

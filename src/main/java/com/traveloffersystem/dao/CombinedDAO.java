@@ -48,41 +48,13 @@ public interface CombinedDAO {
     Arret findArretById(int id) throws Exception;           // 根据ID查找站点
     List<Arret> findAllArrets() throws Exception;           // 查找所有站点
 
-    // =========================
-    // 2. Lucene 相关方法
-    // =========================
 
-    /**
-     * 重建（或初始化）Lucene 索引。
-     * - 可通过文件扫描或数据库数据导入方式完成索引重建。
-     */
+    // =========================
+    // 2) Lucene相关方法
+    // =========================
+    void addTextFileToRow(int id, String content) throws Exception;
     void rebuildLuceneIndex() throws Exception;
-
-    /**
-     * 往 Lucene 索引中添加或更新文档。
-     * @param id 文档ID（与数据库记录主键对应）
-     * @param content 文档内容（需被检索的文本内容）
-     */
     void addLuceneDocument(int id, String content) throws Exception;
-
-    /**
-     * 在 Lucene 索引中执行全文搜索。
-     * @param queryText 查询关键词或表达式
-     * @return 返回符合条件的文档信息
-     */
     String searchLucene(String queryText) throws Exception;
-
-    /**
-     * 执行混合查询（SQL 查询结合 Lucene 检索）。
-     * - 示例：`select * from Hotel where HOT_etoiles>=3 with beach AND spa`
-     * - 解析 SQL 和 Lucene 查询部分，分别执行后合并结果。
-     * @param mixedQuery 混合查询字符串
-     * @return 返回查询结果（可以是字符串，也可以是自定义类列表）
-     */
     String executeMixedQuery(String mixedQuery) throws Exception;
-
-    // =========================
-    // 3. 其他可能扩展的功能（可选）
-    // =========================
-    // 根据业务需求扩展其他高级功能
 }

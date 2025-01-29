@@ -4,13 +4,12 @@ public class Plage {
     private int id;
     private String name;
 
-    public Plage() {}
-
     public Plage(int id, String name) {
         this.id = id;
         this.name = name;
     }
 
+    // Getters and setters
     public int getId() {
         return id;
     }

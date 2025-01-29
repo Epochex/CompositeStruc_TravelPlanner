@@ -41,14 +41,34 @@
             <button type="submit">Execute</button>
         </form>
     </li>
+
+    <!-- Add Text File to Row (Only Write File, No Index) -->
+    <li>
+        <form action="${pageContext.request.contextPath}/lucene/addTextFileOnly" method="post">
+            Add Text File Only (No Indexing):
+            <br/>Row Key (ID): <input type="number" name="id" required>
+            <br/>Text Content: <textarea name="content" rows="3" cols="40"></textarea>
+            <br/><button type="submit">Add Text File</button>
+        </form>
+    </li>
+
+    <!-- Add Text File to Row and Immediately Index -->
+    <li>
+        <form action="${pageContext.request.contextPath}/lucene/addTextFileAndIndex" method="post">
+            Add Text File & Rebuild Index:
+            <br/>Row Key (ID): <input type="number" name="id" required>
+            <br/>Text Content: <textarea name="content" rows="3" cols="40"></textarea>
+            <br/><button type="submit">Add & Index</button>
+        </form>
+    </li>
 </ul>
 
 <h2>Database Operations</h2>
 <ul>
     <!-- Island Operations -->
-    <li><a href="${pageContext.request.contextPath}/query/ile">View All Islands</a></li>
+    <li><a href="${pageContext.request.contextPath}/api/ile">View All Islands</a></li>
     <li>
-        <form action="${pageContext.request.contextPath}/query/ile" method="post">
+        <form action="${pageContext.request.contextPath}/api/ile" method="post">
             Add Island:
             <input type="text" name="name" placeholder="Island Name" required>
             <button type="submit">Add</button>
@@ -56,9 +76,9 @@
     </li>
 
     <!-- Beach Operations -->
-    <li><a href="${pageContext.request.contextPath}/query/plage">View All Beaches</a></li>
+    <li><a href="${pageContext.request.contextPath}/api/plage">View All Beaches</a></li>
     <li>
-        <form action="${pageContext.request.contextPath}/query/plage" method="post">
+        <form action="${pageContext.request.contextPath}/api/plage" method="post">
             Add Beach:
             <input type="text" name="name" placeholder="Beach Name" required>
             <button type="submit">Add</button>

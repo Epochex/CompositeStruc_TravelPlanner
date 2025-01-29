@@ -3,16 +3,22 @@ package com.traveloffersystem.controller;
 import com.traveloffersystem.business.*;
 import com.traveloffersystem.dao.CombinedDAO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
+
 
 @RestController
 @RequestMapping("/api")
 public class CombinedController {
 
+    @Qualifier("jdbcPersistence") // 让普通查询都走 JdbcPersistence
     @Autowired
-    private CombinedDAO combinedDAO;  // 通过 @Autowired 注入，@Primary 生效
+    private CombinedDAO combinedDAO;
 
     @PostMapping("/ile")
     public void createIle(@RequestBody Ile ile) throws Exception {
@@ -35,15 +41,17 @@ public class CombinedController {
         combinedDAO.createPlage(plage);
     }
 
-    @GetMapping("/plage/{id}")
-    public Plage findPlageById(@PathVariable int id) throws Exception {
-        return combinedDAO.findPlageById(id);
-    }
-
     @GetMapping("/plage")
     public List<Plage> findAllPlages() throws Exception {
-        return combinedDAO.findAllPlages();
+        List<Plage> plages = combinedDAO.findAllPlages();
+        if (plages == null) {
+            System.err.println("findAllPlages() returned null!");
+        } else if (plages.isEmpty()) {
+            System.err.println("findAllPlages() returned empty list!");
+        }
+        return plages;
     }
+
 
     // Transport 表操作
     @PostMapping("/transport")

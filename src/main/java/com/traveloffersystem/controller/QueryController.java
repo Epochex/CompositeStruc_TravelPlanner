@@ -3,6 +3,7 @@ package com.traveloffersystem.controller;
 import com.traveloffersystem.business.Ile;
 import com.traveloffersystem.dao.CombinedDAO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 @RequestMapping("/query")
 public class QueryController {
 
+    @Qualifier("advancedPersistence")
     @Autowired
     private CombinedDAO combinedDAO;  // 默认注入 advancedPersistence
 

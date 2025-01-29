@@ -11,17 +11,5 @@
     <!-- 扫描整个 com.traveloffersystem 包，寻找 @Component / @Repository / @Service / @Controller 等注解 -->
     <context:component-scan base-package="com.traveloffersystem" />
 
-    <!-- MySQL 数据源配置 -->
-    <bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
-        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver" />
-        <property name="url" value="jdbc:mysql://45.149.207.13:3306/agp?useUnicode=true&amp;characterEncoding=UTF-8&amp;useSSL=false" />
-        <property name="username" value="root" />
-        <property name="password" value="root" />
-    </bean>
-
-    <!-- 如果要使用 JdbcTemplate -->
-    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
-        <property name="dataSource" ref="dataSource" />
-    </bean>
 
 </beans>
