@@ -7,7 +7,7 @@ import java.util.*;
 public class OperatorJdbc {
 
     public void createSiteTouristique(Map<String, Object> siteTouristiqueData) throws Exception {
-        // 修正 SQL 语句，插入到 SiteTouristique 表
+        //  insert into SiteTouristique table
         String sql = "INSERT INTO SiteTouristique (SIT_id, SIT_description, SIT_tarif, SIT_duree, SIT_type, LIE_id) " +
                 "VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection conn = JdbcConnection.getConnection();
@@ -123,6 +123,7 @@ public class OperatorJdbc {
         return lieux;
     }
 
+    // Executes a SQL query and extracts the integer value of the first column in the result set and stores it in a Set<Integer>.
     public Set<Integer> executeSQLAndGetSitIds(String sql) throws Exception {
         Set<Integer> sitIds = new HashSet<>();
         try (Connection conn = JdbcConnection.getConnection();
