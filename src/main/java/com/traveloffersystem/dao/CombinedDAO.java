@@ -5,33 +5,33 @@ import java.util.Map;
 
 /**
  * Combined DAO Interface
- * 仅包含与 SiteTouristique 和 Lieu 表相关的数据库操作方法，以及 Lucene 扩展方法
+ * 只保留测试类所需的方法 + 混合查询所需的方法
  */
 public interface CombinedDAO {
 
-    void createSiteTouristique(Map<String, Object> siteTouristiqueData) throws Exception;
-
-    Map<String, Object> findSiteTouristiqueById(int id) throws Exception;
-
+    /**
+     * 查找所有 SiteTouristique 记录
+     */
     List<Map<String, Object>> findAllSiteTouristiques() throws Exception;
 
-    void createLieu(Map<String, Object> lieuData) throws Exception;
-
-    Map<String, Object> findLieuById(int id) throws Exception;
-
-    Map<Integer, String> getLieuNamesBySiteTouristique() throws Exception;
-
-    Map<Integer, String> getLuceneDescriptionsBySiteTouristique() throws Exception;
-
-    List<Map<String, Object>> findAllLieux() throws Exception;
-
+    /**
+     * 向指定主键行添加文本（会在磁盘上创建 .txt 文件并更新Lucene索引）
+     */
     void addTextFileToRow(int id, String content) throws Exception;
 
+    /**
+     * 重建（或初次创建）Lucene索引
+     */
     void rebuildLuceneIndex() throws Exception;
 
+    /**
+     * 执行混合查询(可能含 " with " 子句)
+     * 若不含 " with "，则当做纯 SQL
+     */
     String executeMixedQuery(String mixedQuery) throws Exception;
 
-    void addLuceneDocument(int id, String content) throws Exception;
-
+    /**
+     * 执行纯文本查询(Lucene)
+     */
     String searchLucene(String queryText) throws Exception;
 }
