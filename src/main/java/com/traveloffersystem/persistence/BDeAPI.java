@@ -1,158 +1,177 @@
 package com.traveloffersystem.persistence;
 
 import com.traveloffersystem.dao.CombinedDAO;
-
 import com.traveloffersystem.utils.FileTextUtils;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.*;
-import org.apache.lucene.index.*;
-import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
-import org.apache.lucene.store.FSDirectory;
 
 import java.io.File;
-import java.nio.file.Paths;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.*;
 
 /**
- * BDeAPI: directly implements CombinedDAO, which contains all the logic for JDBC query + Lucene operations.
- * Internally use private methods to do getLieIdBySitId(...) / findLieuById(...) etc. to support the “connect to” operations required in executeMixedQuery(...). in order to support the “Connect to Lieu to get name” method in
+ * BDeAPI：实现 CombinedDAO 接口，作为对外提供的数据库扩展 API
+ * 使用 OperatorJdbc 和 OperatorLucene 进行操作
  */
 public class BDeAPI implements CombinedDAO {
 
-    private static final String PROJECT_ROOT = System.getProperty("user.dir");
+    private String tableName;
+    private String keyAttribute;
+    private String directoryPath;
+    private String luceneIndexPath;
 
-    // for .txt
-    private static final String TEXT_FOLDER_PATH = Paths.get(PROJECT_ROOT, "lucene_texts").toString();
-    // for lucene index
-    private static final String LUCENE_INDEX_PATH = Paths.get(PROJECT_ROOT, "lucene_data").toString();
+    /**
+     * 声明表 T 和主键属性，以及存放文本的目录 R
+     *
+     * @param tableName      表名 T
+     * @param keyAttribute   主键属性名
+     * @param directoryPath  存放文本文件的目录路径 R
+     * @throws Exception 声明过程中可能抛出的异常
+     */
+    @Override
+    public void declareTable(String tableName, String keyAttribute, String directoryPath) throws Exception {
+        this.tableName = tableName;
+        this.keyAttribute = keyAttribute;
+        this.directoryPath = directoryPath;
 
-    // =============== 1) Relational Database Operations ===============
+        // 设置 Lucene 索引路径
+        this.luceneIndexPath = directoryPath + File.separator + "lucene_index";
 
+        // 确保目录存在
+        File dir = new File(directoryPath);
+        if(!dir.exists()) {
+            dir.mkdirs();
+        }
+        File luceneDir = new File(luceneIndexPath);
+        if(!luceneDir.exists()) {
+            luceneDir.mkdirs();
+        }
+    }
+
+    /**
+     * 查找所有 SiteTouristique 记录
+     *
+     * @return 包含所有记录的列表，每条记录是一个键值对映射
+     * @throws Exception 查询过程中可能抛出的异常
+     */
     @Override
     public List<Map<String, Object>> findAllSiteTouristiques() throws Exception {
-        List<Map<String, Object>> sites = new ArrayList<>();
-        String sql = "SELECT * FROM SiteTouristique";
-        try (Connection conn = JdbcConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sql)) {
-            ResultSetMetaData md = rs.getMetaData();
-            while (rs.next()) {
-                Map<String, Object> row = new HashMap<>();
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    row.put(md.getColumnName(i), rs.getObject(i));
-                }
-                sites.add(row);
-            }
+        String sql = "SELECT * FROM " + tableName;
+        OperatorJdbc jdbcOperator = new OperatorJdbc(sql);
+        jdbcOperator.init();
+        List<Map<String, Object>> results = new ArrayList<>();
+        while(true) {
+            Object obj = jdbcOperator.next();
+            if(obj == null) break;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> row = (Map<String, Object>) obj;
+            results.add(row);
         }
-        return sites;
+        return results;
     }
 
+    /**
+     * 向指定主键行添加文本（会在磁盘上创建 .txt 文件并更新 Lucene 索引）
+     *
+     * @param id      主键值
+     * @param content 文本内容
+     * @throws Exception 添加过程中可能抛出的异常
+     */
     @Override
     public void addTextFileToRow(int id, String content) throws Exception {
-        // 1) write to TEXT_FOLDER_PATH/<id>.txt
-        String filePath = TEXT_FOLDER_PATH + File.separator + id + ".txt";
+        // 1. 写入 .txt 文件
+        String filePath = directoryPath + File.separator + id + ".txt";
         FileTextUtils.writeTextFile(filePath, content);
 
-        // 2) Lucene add and update
-        addLuceneDocument(id, content);
+        // 2. 使用 OperatorLucene 添加/更新 Lucene 索引
+        OperatorLucene luceneOperator = new OperatorLucene("", luceneIndexPath, directoryPath, false);
+        luceneOperator.addDocument(id, content);
     }
 
+    /**
+     * 重建（或初次创建）Lucene 索引
+     *
+     * @throws Exception 重建过程中可能抛出的异常
+     */
     @Override
     public void rebuildLuceneIndex() throws Exception {
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-
-            writer.deleteAll(); // 清空旧索引
-
-            File folder = new File(TEXT_FOLDER_PATH);
-            if (!folder.exists()) folder.mkdirs();
-
-            File[] files = folder.listFiles((d, name) -> name.endsWith(".txt"));
-            if (files != null) {
-                for (File f : files) {
-                    String filename = f.getName();
-                    int key = Integer.parseInt(filename.replace(".txt", ""));
-                    String txt = FileTextUtils.readTextFile(f.getAbsolutePath());
-
-                    Document doc = new Document();
-                    doc.add(new IntPoint("id", key));
-                    doc.add(new StoredField("id", key));
-                    doc.add(new TextField("content", txt, Field.Store.YES));
-                    writer.addDocument(doc);
-                }
-            }
-            writer.commit();
-        }
+        OperatorLucene luceneOperator = new OperatorLucene("", luceneIndexPath, directoryPath, false);
+        luceneOperator.rebuildIndex();
     }
 
-    // =============== 2) Mixed Queries + Pure SQL or Pure Lucene Processing  ===============
-
+    /**
+     * 执行混合查询（可能含 "with" 子句）
+     * 若不含 "with"，则当做纯 SQL 执行
+     *
+     * @param mixedQuery 混合查询字符串
+     * @return 查询结果的字符串表示
+     * @throws Exception 查询过程中可能抛出的异常
+     */
     @Override
     public String executeMixedQuery(String mixedQuery) throws Exception {
-        // 1) 检查是否含 " with "
         String lower = mixedQuery.toLowerCase();
         int idx = lower.indexOf(" with ");
-        if (idx < 0) {
-            // 没有with子句，则当作普通SQL执行
+        if(idx < 0) {
+            // 没有 "with" 子句，执行纯 SQL 查询
             return executeSimpleSQLQuery(mixedQuery);
         }
 
-        // 含 with，拆分SQL部分与文本部分
+        // 有 "with" 子句，拆分为 SQL 部分和文本部分
         String sqlPart = mixedQuery.substring(0, idx).trim();
-        String lucenePart = mixedQuery.substring(idx + 6).trim(); // "rocheuse"等
+        String textPart = mixedQuery.substring(idx + 6).trim();
 
-        // 2) 先执行SQL，获取 SIT_id 集合
+        // 1. 执行 SQL 查询，获取 SIT_id 集合
         Set<Integer> sqlResultSet = new HashSet<>();
-        try (Connection conn = JdbcConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sqlPart)) {
-
-            while (rs.next()) {
-                // 假设SQL第一列就是 SIT_id
-                int sitId = rs.getInt(1);
-                sqlResultSet.add(sitId);
+        OperatorJdbc sqlOperator = new OperatorJdbc(sqlPart);
+        sqlOperator.init();
+        while(true) {
+            Object obj = sqlOperator.next();
+            if(obj == null) break;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> row = (Map<String, Object>) obj;
+            // 假设 SQL 查询的第一列是 SIT_id
+            Object firstCol = row.values().iterator().next();
+            if(firstCol instanceof Integer) {
+                sqlResultSet.add((Integer) firstCol);
             }
         }
 
-        // 3) 执行Lucene搜索
-        Map<Integer, Float> luceneResults = new LinkedHashMap<>();
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             DirectoryReader reader = DirectoryReader.open(dir)) {
-
-            IndexSearcher searcher = new IndexSearcher(reader);
-            QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-            Query query = parser.parse(lucenePart);
-
-            TopDocs topDocs = searcher.search(query, 200); // 拿前200个
-            for (ScoreDoc sd : topDocs.scoreDocs) {
-                Document doc = searcher.doc(sd.doc);
-                int sid = Integer.parseInt(doc.get("id"));
-                luceneResults.put(sid, sd.score);
-            }
+        // 2. 执行 Lucene 搜索，获取匹配的 SIT_id 和分数
+        OperatorLucene luceneOperator = new OperatorLucene(textPart, luceneIndexPath, directoryPath, false);
+        luceneOperator.init();
+        Map<Integer, Float> luceneResults = new LinkedHashMap<>(); // 保持顺序
+        while(true) {
+            Object obj = luceneOperator.next();
+            if(obj == null) break;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> row = (Map<String, Object>) obj;
+            int id = (int) row.get("id");
+            float score = (float) row.get("score");
+            luceneResults.put(id, score);
         }
 
-        // 4) 交集（只保留同时出现在SQL和Lucene中的SIT_id）
+        // 3. 交集（仅保留同时出现在 SQL 和 Lucene 中的 SIT_id）
         List<Map.Entry<Integer, Float>> joined = new ArrayList<>();
-        for (Map.Entry<Integer, Float> entry : luceneResults.entrySet()) {
-            if (sqlResultSet.contains(entry.getKey())) {
+        for(Map.Entry<Integer, Float> entry : luceneResults.entrySet()) {
+            if(sqlResultSet.contains(entry.getKey())) {
                 joined.add(entry);
             }
         }
-        // 按score降序
+
+        // 4. 按分数降序排序
         joined.sort((a, b) -> Float.compare(b.getValue(), a.getValue()));
 
-        // 5) 构建结果字符串(按文档要求)
+        // 5. 构建结果字符串
         StringBuilder sb = new StringBuilder("MixedQuery Results:\n");
-        for (Map.Entry<Integer, Float> e : joined) {
-            int sitId = e.getKey();
-            float score = e.getValue();
-            // 获取对应 LIE_id
+        for(Map.Entry<Integer, Float> entry : joined) {
+            int sitId = entry.getKey();
+            float score = entry.getValue();
+
+            // 获取对应的 LIE_id
             Integer lieId = getLieIdBySitId(sitId);
-            if (lieId != null) {
+            if(lieId != null) {
                 Map<String, Object> lieu = findLieuById(lieId);
-                if (lieu != null) {
+                if(lieu != null) {
                     String lieNom = (String) lieu.get("LIE_nom");
                     String content = getLuceneContent(sitId);
                     sb.append("Lieu Name=").append(lieNom)
@@ -162,103 +181,75 @@ public class BDeAPI implements CombinedDAO {
                 }
             }
         }
+
         return sb.toString();
     }
-
-    @Override
-    public String searchLucene(String queryText) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             DirectoryReader reader = DirectoryReader.open(dir)) {
-
-            IndexSearcher searcher = new IndexSearcher(reader);
-            QueryParser parser = new QueryParser("content", new StandardAnalyzer());
-            Query query = parser.parse(queryText);
-
-            TopDocs topDocs = searcher.search(query, 50);
-            for (ScoreDoc sd : topDocs.scoreDocs) {
-                Document doc = searcher.doc(sd.doc);
-                sb.append("ID=").append(doc.get("id"))
-                        .append(", content=").append(doc.get("content"))
-                        .append(", score=").append(sd.score)
-                        .append("\n");
-            }
-        }
-        return sb.toString();
-    }
-
-    // =============== 3) Internal auxiliary methods ===============
 
     /**
-     * 执行不含 "with" 的 SQL 查询，并把结果转换为字符串输出
+     * 执行纯 SQL 查询，并将结果转为字符串
+     *
+     * @param sqlQuery SQL 查询字符串
+     * @return 查询结果的字符串表示
+     * @throws Exception 查询过程中可能抛出的异常
      */
     private String executeSimpleSQLQuery(String sqlQuery) throws Exception {
         StringBuilder sb = new StringBuilder("SQL Query Results:\n");
-        try (Connection conn = JdbcConnection.getConnection();
-             Statement st = conn.createStatement();
-             ResultSet rs = st.executeQuery(sqlQuery)) {
-            ResultSetMetaData md = rs.getMetaData();
-            while (rs.next()) {
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    sb.append(md.getColumnName(i)).append("=")
-                            .append(rs.getObject(i)).append(" ; ");
-                }
-                sb.append("\n");
+        OperatorJdbc sqlOperator = new OperatorJdbc(sqlQuery);
+        sqlOperator.init();
+        while(true) {
+            Object obj = sqlOperator.next();
+            if(obj == null) break;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> row = (Map<String, Object>) obj;
+            for(Map.Entry<String, Object> entry : row.entrySet()) {
+                sb.append(entry.getKey()).append("=").append(entry.getValue()).append("; ");
             }
+            sb.append("\n");
         }
         return sb.toString();
     }
 
     /**
-     * 往 Lucene 索引中添加/更新文档
+     * 执行纯文本查询（Lucene），返回结果的字符串表示
+     *
+     * @param queryText 文本查询字符串
+     * @return 查询结果的字符串表示
+     * @throws Exception 查询过程中可能抛出的异常
      */
-    private void addLuceneDocument(int id, String content) throws Exception {
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             IndexWriter writer = new IndexWriter(dir, new IndexWriterConfig(new StandardAnalyzer()))) {
-
-            // 删除旧文档
-            Query q = IntPoint.newExactQuery("id", id);
-            writer.deleteDocuments(q);
-
-            // 新增
-            Document doc = new Document();
-            doc.add(new IntPoint("id", id));
-            doc.add(new StoredField("id", id));
-            doc.add(new TextField("content", content, Field.Store.YES));
-            writer.addDocument(doc);
-
-            writer.commit();
+    @Override
+    public String searchLucene(String queryText) throws Exception {
+        OperatorLucene luceneOperator = new OperatorLucene(queryText, luceneIndexPath, directoryPath, false);
+        luceneOperator.init();
+        StringBuilder sb = new StringBuilder("Lucene Search Results:\n");
+        while(true) {
+            Object obj = luceneOperator.next();
+            if(obj == null) break;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> row = (Map<String, Object>) obj;
+            sb.append("ID=").append(row.get("id"))
+                    .append(", content=").append(row.get("content"))
+                    .append(", score=").append(row.get("score"))
+                    .append("\n");
         }
+        return sb.toString();
     }
 
-    /**
-     * 获取 Lucene 文档中的 content
-     */
-    private String getLuceneContent(int id) throws Exception {
-        try (FSDirectory dir = FSDirectory.open(Paths.get(LUCENE_INDEX_PATH));
-             DirectoryReader reader = DirectoryReader.open(dir)) {
-
-            IndexSearcher searcher = new IndexSearcher(reader);
-            Query query = IntPoint.newExactQuery("id", id);
-            TopDocs topDocs = searcher.search(query, 1);
-            if (topDocs.totalHits.value > 0) {
-                Document doc = searcher.doc(topDocs.scoreDocs[0].doc);
-                return doc.get("content");
-            }
-        }
-        return "";
-    }
+    // =============== 3) 内部辅助方法 ===============
 
     /**
      * 通过 SIT_id 查询对应的 LIE_id
+     *
+     * @param sitId SIT_id
+     * @return 对应的 LIE_id，或 null
+     * @throws Exception 查询过程中可能抛出的异常
      */
     private Integer getLieIdBySitId(int sitId) throws Exception {
-        String sql = "SELECT LIE_id FROM SiteTouristique WHERE SIT_id = ?";
+        String sql = "SELECT LIE_id FROM " + tableName + " WHERE " + keyAttribute + " = ?";
         try (Connection conn = JdbcConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, sitId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
+            if(rs.next()) {
                 return rs.getInt("LIE_id");
             }
         }
@@ -266,7 +257,11 @@ public class BDeAPI implements CombinedDAO {
     }
 
     /**
-     * 查找 Lieu 记录 (仅用于在 executeMixedQuery 中获取 LIE_nom 等信息)
+     * 查找 Lieu 记录（仅用于在 executeMixedQuery 中获取 LIE_nom 等信息）
+     *
+     * @param id LIE_id
+     * @return 包含 Lieu 记录的 Map，或 null
+     * @throws Exception 查询过程中可能抛出的异常
      */
     private Map<String, Object> findLieuById(int id) throws Exception {
         String sql = "SELECT LIE_id, LIE_nom, LIE_type, ST_AsText(LIE_coordonnees) AS LIE_coordonnees, ILE_id FROM Lieu WHERE LIE_id = ?";
@@ -275,18 +270,18 @@ public class BDeAPI implements CombinedDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
+            if(rs.next()) {
                 result.put("LIE_id", rs.getInt("LIE_id"));
                 result.put("LIE_nom", rs.getString("LIE_nom"));
                 result.put("LIE_type", rs.getString("LIE_type"));
                 result.put("ILE_id", rs.getInt("ILE_id"));
 
-                // 解析 POINT(long lat)
+                // 解析 POINT(longitude latitude)
                 String wkt = rs.getString("LIE_coordonnees");
-                if (wkt != null && wkt.startsWith("POINT")) {
+                if(wkt != null && wkt.startsWith("POINT")) {
                     wkt = wkt.replace("POINT(", "").replace(")", "").trim();
                     String[] coords = wkt.split(" ");
-                    if (coords.length == 2) {
+                    if(coords.length == 2) {
                         result.put("LIE_longitude", Double.parseDouble(coords[0]));
                         result.put("LIE_latitude", Double.parseDouble(coords[1]));
                     }
@@ -294,5 +289,23 @@ public class BDeAPI implements CombinedDAO {
             }
         }
         return result.isEmpty() ? null : result;
+    }
+
+    /**
+     * 获取 Lucene 索引中指定 ID 的 content
+     *
+     * @param id 文档的主键 ID
+     * @return 文档内容，或空字符串
+     * @throws Exception 查询过程中可能抛出的异常
+     */
+    private String getLuceneContent(int id) throws Exception {
+        // 使用数字查询获取 'content'
+        OperatorLucene luceneOperator = new OperatorLucene("id:" + id, luceneIndexPath, directoryPath, true);
+        luceneOperator.init();
+        Object obj = luceneOperator.next();
+        if(obj == null) return "";
+        @SuppressWarnings("unchecked")
+        Map<String, Object> row = (Map<String, Object>) obj;
+        return (String) row.get("content");
     }
 }
